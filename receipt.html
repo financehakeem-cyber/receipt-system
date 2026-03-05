@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NAS WATANIA - Receipt System</title>
+
+<!-- ✅ Excel Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+:root{
+  --bg:#0b1220;
+  --card:#0f172a;
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+  --line:#243244;
+
+  --sky:#3aa0ff;
+  --sky2:#2b87e6;
+
+  --danger:#ef4444;
+
+  --field:#0b1324;
+  --fieldLine:#223044;
+
+  --shadow: 0 18px 45px rgba(0,0,0,.45);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  background: radial-gradient(900px 450px at 20% -10%, rgba(58,160,255,.22), transparent 55%),
+              radial-gradient(800px 500px at 90% 10%, rgba(43,135,230,.18), transparent 52%),
+              var(--bg);
+  color:var(--text);
+  padding:24px 12px;
+}
+
+.shell{ width:min(860px, 100%); margin:0 auto; }
+
+.brandTop{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; margin-bottom:14px;
+}
+.brandTitle{ display:flex; align-items:center; gap:12px; }
+.logoDot{
+  width:14px;height:14px;border-radius:999px;
+  background: linear-gradient(135deg, var(--sky), var(--sky2));
+  box-shadow: 0 0 0 6px rgba(58,160,255,.10);
+}
+.brandTitle h1{ margin:0; font-size:18px; letter-spacing:.4px; }
+.brandTitle p{ margin:0; color:var(--muted); font-size:12px; }
+
+.badgePill{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 10px;
+  border:1px solid rgba(58,160,255,.25);
+  background: rgba(58,160,255,.08);
+  border-radius:999px;
+  color:#cfe7ff;
+  font-size:12px;
+}
+
+.card{
+  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+  border:1px solid rgba(36,50,68,.8);
+  border-radius:16px;
+  box-shadow: var(--shadow);
+  overflow:hidden;
+}
+.cardHeader{
+  padding:16px 18px;
+  border-bottom:1px solid rgba(36,50,68,.75);
+  background: rgba(15,23,42,.55);
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+.cardHeader h3{ margin:0; font-size:15px; letter-spacing:.3px; }
+.cardHeader .sub{ margin:0; color:var(--muted); font-size:12px; }
+.cardBody{ padding:16px 18px; }
+
+.hr{ height:1px; background: rgba(36,50,68,.9); margin:14px 0; }
+
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+@media (max-width: 720px){ .grid{ grid-template-columns:1fr; } }
+
+.field label{
+  display:block; margin:0 0 6px 2px;
+  color:var(--muted); font-size:12px;
+}
+input, select{
+  width:100%;
+  padding:11px 12px;
+  border-radius:12px;
+  border:1px solid var(--fieldLine);
+  outline:none;
+  font-size:14px;
+  background: rgba(11,19,36,.85);
+  color:var(--text);
+  transition:.15s;
+}
+input::placeholder{ color: rgba(156,163,175,.85); }
+input:focus, select:focus{
+  border-color: rgba(58,160,255,.9);
+  box-shadow: 0 0 0 4px rgba(58,160,255,.16);
+  transform: translateY(-1px);
+}
+
+.selectWrap{ position:relative; }
+.selectWrap:after{
+  content:"";
+  position:absolute; right:12px; top:50%;
+  width:10px;height:10px;
+  border-right:2px solid rgba(229,231,235,.6);
+  border-bottom:2px solid rgba(229,231,235,.6);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events:none;
+}
+select{ appearance:none; padding-right:40px; }
+
+.btnRow{ display:flex; gap:10px; flex-wrap:wrap; }
+.btn{
+  border:none;
+  padding:11px 12px;
+  border-radius:12px;
+  cursor:pointer;
+  font-weight:800;
+  letter-spacing:.2px;
+  transition:.15s;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  user-select:none;
+}
+.btnPrimary{
+  color:#fff;
+  background: linear-gradient(135deg, var(--sky), var(--sky2));
+  box-shadow: 0 12px 25px rgba(58,160,255,.18);
+}
+.btnPrimary:hover{ filter:brightness(1.03); transform: translateY(-1px); }
+.btnPrimary:active{ transform: translateY(0px); }
+
+.btnGhost{
+  color:var(--text);
+  background: rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.10);
+}
+.btnGhost:hover{ background: rgba(255,255,255,.07); transform: translateY(-1px); }
+
+.btnDanger{
+  color:#fff;
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+}
+.btnDanger:hover{ filter:brightness(1.02); transform: translateY(-1px); }
+
+.btnSmall{ padding:10px 12px; font-weight:800; }
+.grow{ flex: 1 1 220px; }
+
+.topBar{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+.empTag{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 10px;
+  border-radius:999px;
+  background: rgba(34,197,94,.10);
+  border:1px solid rgba(34,197,94,.25);
+  color:#bbf7d0;
+  font-weight:800;
+  font-size:12px;
+}
+.empTag b{ color:#86efac; }
+
+.hidden{ display:none !important; }
+
+/* ===== Receipt Area ===== */
+#printArea{
+  margin-top:12px;
+  border-radius:16px;
+  border:1px solid rgba(36,50,68,.75);
+  background:#fff;
+  color:#111;
+  overflow:hidden;
+}
+#printArea .printHead{
+  padding:14px 16px;
+  background:#f3f4f6;
+  border-bottom:1px solid #e5e7eb;
+}
+#printArea .printHead h2{
+  margin:0;
+  font-size:16px;
+  text-align:center;
+  letter-spacing:.4px;
+}
+#printArea .printBody{ padding:14px 16px; }
+.pair{
+  display:flex;
+  gap:12px;
+  justify-content:space-between;
+  padding:8px 0;
+  border-bottom:1px dashed #e5e7eb;
+  font-size:13px;
+}
+.pair b{ min-width:140px; }
+.pair:last-child{ border-bottom:none; }
+
+.signRow, .managerRow{
+  display:flex;
+  justify-content:space-between;
+  margin-top:45px;
+  font-weight:700;
+  width:90%;
+  margin-left:auto;
+  margin-right:auto;
+}
+.signRow div, .managerRow div{
+  width:45%;
+  text-align:center;
+  padding-top:10px;
+  border-top:1px solid #000;
+}
+.printActions{
+  padding:12px 16px;
+  border-top:1px solid #e5e7eb;
+  background:#fafafa;
+}
+
+/* ✅ Logo inside receipt only */
+.receiptLogo{
+  width:280px;
+  max-width:90%;
+  height:auto;
+  object-fit:contain;
+  display:block;
+  margin: 6px auto 15px auto;
+}
+
+/* ✅ Login logo (optional fancy) */
+.loginLogo{
+  width:260px;
+  max-width:90%;
+  height:auto;
+  object-fit:contain;
+  filter: drop-shadow(0 0 15px rgba(58,160,255,.4));
+}
+
+@media print{
+  body *{ visibility:hidden; }
+  #printArea, #printArea *{ visibility:visible; }
+  #printArea{ position:absolute; left:0; top:0; width:100%; border:none; box-shadow:none; }
+  .printActions{ display:none; }
+}
+</style>
+</head>
+
+<body>
+<div class="shell">
+
+  <div class="brandTop">
+    <div class="brandTitle">
+      <div class="logoDot"></div>
+      <div>
+        <h1>NAS WATANIA</h1>
+        <p>Receipt System</p>
+      </div>
+    </div>
+    <div class="badgePill">Local Storage • Offline</div>
+  </div>
+
+  <!-- ===== LOGIN ===== -->
+  <div class="card" id="loginBox">
+    <div class="cardHeader">
+      <div>
+        <h3>Employee Login</h3>
+        <p class="sub">Enter your username & password to continue</p>
+      </div>
+    </div>
+
+    <div class="cardBody">
+      <div style="text-align:center; margin-bottom:12px;">
+        <img src="nas_logo.png" class="loginLogo" alt="NAS Logo">
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label>Username</label>
+          <input id="username" placeholder="e.g. ali" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input id="password" type="password" placeholder="••••••••">
+        </div>
+      </div>
+
+      <div class="btnRow" style="margin-top:10px;">
+        <button class="btn btnPrimary grow" onclick="login()">Login</button>
+      </div>
+
+      <p style="margin:10px 0 0; color:var(--muted); font-size:12px;">
+        Tip: Press Enter to login.
+      </p>
+    </div>
+  </div>
+
+  <!-- ===== MAIN ===== -->
+  <div class="card hidden" id="mainBox" style="margin-top:14px;">
+    <div class="cardHeader">
+      <div class="topBar" style="width:100%;">
+        <div class="empTag">Employee: <b id="empName"></b></div>
+        <button class="btn btnDanger btnSmall" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="cardBody">
+      <h3 style="margin-top:0;">Receipt Entry</h3>
+
+      <div class="grid">
+        <div class="field">
+          <label>Passenger Name</label>
+          <input id="customer" placeholder="Passenger Name">
+        </div>
+
+        <div class="field">
+          <label>Flight No</label>
+          <input id="flightNo" placeholder="Flight No">
+        </div>
+
+        <div class="field selectWrap">
+          <label>Service</label>
+          <select id="service">
+            <option value="">Select Service</option>
+            <option>Handling</option>
+            <option>Wheelchare</option>
+            <option>EBT</option>
+            <option>CN.EBT</option>
+            <option>Travel Form</option>
+            <option>Insurance</option>
+            <option>MOPH</option>
+            <option>Other</option>
+            <option>Baggage Delivery</option>
+            <option>CIP</option>
+          </select>
+        </div>
+
+        <div class="field selectWrap">
+          <label>Currency</label>
+          <select id="currency">
+            <option value="">Select Currency</option>
+            <option>USD</option>
+            <option>IQD</option>
+          </select>
+        </div>
+
+        <div class="field selectWrap">
+          <label>Type</label>
+          <select id="type" onchange="onTypeChange()">
+            <option value="">Select Type</option>
+            <option>Entry</option>
+            <option>Reverse</option>
+            <option>Payment</option>
+            <option>transfer</option>
+          </select>
+        </div>
+
+        <div class="field selectWrap">
+          <label>Company Name</label>
+          <select id="company">
+            <option value="">Select Company</option>
+            <option>NONE</option>
+            <option>Air Arabia</option>
+            <option>Cham wings</option>
+            <option>Egypt Air</option>
+            <option>Emirates</option>
+            <option>Fly Dubai</option>
+            <option>Middle East airline</option>
+            <option>Pegasus Airine</option>
+            <option>QATAR AIRWAYS</option>
+            <option>Syrian Air</option>
+            <option>Turkish Airlines</option>
+            <option>Meraj</option>
+            <option>Royal Jordanian</option>
+            <option>UR</option>
+            <option>Bravo</option>
+            <option>Fly Baghdad</option>
+            <option>Avia Traffic</option>
+            <option>Tail wind</option>
+            <option>Mahan Air</option>
+            <option>Armenia Air</option>
+            <option>Jordan aviation</option>
+            <option>TABAN AIR</option>
+            <option>Jet Magic Airline</option>
+            <option>Klas Jet Airline</option>
+            <option>RED WINGS</option>
+            <option>PAKISTAN AIR</option>
+            <option>QESHM AIR</option>
+            <option>Cash Customers</option>
+            <option>ATA air</option>
+            <option>Aseman air</option>
+            <option>Nile Air</option>
+            <option>ASA</option>
+            <option>UT Air</option>
+            <option>SAHA Air</option>
+            <option>Pars Air</option>
+            <option>Zagros Air</option>
+            <option>AEROFLOT Airline</option>
+            <option>Fly Arna</option>
+            <option>Fly Nas</option>
+            <option>Flyadeal</option>
+            <option>Fly Sepehran</option>
+            <option>VIP Terminal</option>
+            <option>Salam Air</option>
+            <option>ASL Group</option>
+            <option>Baghdad Lounge</option>
+            <option>Caspian Air</option>
+            <option>IRAN Air</option>
+            <option>freebird</option>
+            <option>Iran Tour</option>
+            <option>Air Arabia-Abo Dhabi</option>
+            <option>A Jet</option>
+            <option>Gulf Air</option>
+            <option>Sama terminal</option>
+            <option>Global</option>
+            <option>Simor</option>
+            <option>Al Jazzera</option>
+            <option>Akitu Aviation</option>
+            <option>Alpha Star Aviation</option>
+            <option>Yazd airline</option>
+            <option>AVA</option>
+            <option>Sendebad travel</option>
+            <option>Fly cham</option>
+            <option>AzerbaijanAirlines</option>
+            <option>Fly Kish</option>
+            <option>Aegean Air</option>
+            <option>Oman Air</option>
+            <option>AlRawdatain-VRS</option>
+            <option>AlRawdatain-AVA</option>
+            <option>AlRawdatain-MJ</option>
+            <option>Charter</option>
+            <option>Akiti Aviation</option>
+            <option>Infinifi</option>
+            <option>ItlalaAlsharq-Kich</option>
+            <option>ItlalaAlsharq-MJ</option>
+            <option>ItlalaAlsharq-SN</option>
+            <option>ItlalaAlsharq-SR</option>
+            <option>ItlalaAlsharq-QM</option>
+            <option>ItlalaAlsharq-AN</option>
+            <option>ItlalaAlsharq-ARN</option>
+            <option>ItlalaAlsharq-YZD</option>
+            <option>Arab Wings</option>
+            <option>Al Nisreen Company</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Amount</label>
+          <input id="amount" type="number" placeholder="0">
+        </div>
+
+        <div class="field">
+          <label>Description</label>
+          <input id="note" placeholder="Description">
+        </div>
+      </div>
+
+      <div id="reverseBox" class="hidden" style="margin-top:8px;">
+        <div class="field">
+          <label>Enter Receipt No to Reverse</label>
+          <input id="reverseOf" placeholder="e.g. 2026020001">
+        </div>
+      </div>
+
+      <div class="btnRow" style="margin-top:10px;">
+        <button class="btn btnPrimary grow" onclick="saveAndPrepare()">Save + Prepare</button>
+        <button class="btn btnGhost grow" onclick="newReceipt()">New Receipt</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <h3 style="margin:0 0 8px 0;">Search Receipt</h3>
+      <div class="btnRow">
+        <input id="searchNo" placeholder="Enter Receipt No" style="flex:1; min-width:220px;">
+        <button class="btn btnGhost btnSmall" onclick="searchReceipt()">Search</button>
+      </div>
+
+      <div id="printArea" class="hidden"></div>
+
+      <div class="hr"></div>
+
+      <h3 style="margin:0 0 8px 0;">Daily Report</h3>
+      <div class="btnRow">
+        <input type="date" id="reportDate" style="flex:1; min-width:220px;">
+        <button class="btn btnPrimary btnSmall" onclick="exportExcel()">Export Excel (.xlsx)</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ===================== LOGIN USERS ===================== */
+const users = [
+  {u:"ali",     p:"123"},
+  {u:"noor",    p:"123"},
+  {u:"abdula",  p:"123"},
+  {u:"mustafa", p:"123"},
+  {u:"mustafaf",p:"123"},
+  {u:"taif",    p:"123"},
+  {u:"ahmed",   p:"123"}
+];
+
+let currentUser = localStorage.getItem("currentUser_v1") || "";
+
+/* ===================== STORAGE ===================== */
+let receipts = JSON.parse(localStorage.getItem("receipts_v9")) || [];
+let lastReceiptNo = "";
+let isLastPrinted = true;
+
+/* ===================== AUTH ===================== */
+function login(){
+  const u = (username.value || "").trim().toLowerCase();
+  const p = (password.value || "").trim();
+
+  const ok = users.find(x => x.u === u && x.p === p);
+  if(!ok){
+    alert("Incorrect Username or Password");
+    return;
+  }
+
+  currentUser = u;
+  localStorage.setItem("currentUser_v1", currentUser);
+  showMain();
+}
+
+function logout(){
+  localStorage.removeItem("currentUser_v1");
+  currentUser = "";
+  username.value = "";
+  password.value = "";
+  loginBox.classList.remove("hidden");
+  mainBox.classList.add("hidden");
+}
+
+function showMain(){
+  empName.innerText = currentUser;
+  loginBox.classList.add("hidden");
+  mainBox.classList.remove("hidden");
+}
+
+if(currentUser){ showMain(); }
+
+/* Enter key to login */
+document.addEventListener("keydown", (e)=>{
+  if(e.key === "Enter" && !loginBox.classList.contains("hidden")){
+    login();
+  }
+});
+
+/* ===================== UI control when type changes ===================== */
+function onTypeChange(){
+  if(type.value === "Reverse"){
+    reverseBox.classList.remove("hidden");
+
+    customer.disabled = true;
+    flightNo.disabled = true;
+    service.disabled  = true;
+    currency.disabled = true;
+    company.disabled  = true;
+    amount.disabled   = true;
+    note.disabled     = true;
+
+    customer.value="";
+    flightNo.value="";
+    service.value="";
+    currency.value="";
+    company.value="";
+    amount.value="";
+    note.value="";
+  } else {
+    reverseBox.classList.add("hidden");
+    reverseOf.value="";
+
+    customer.disabled = false;
+    flightNo.disabled = false;
+    service.disabled  = false;
+    currency.disabled = false;
+    company.disabled  = false;
+    amount.disabled   = false;
+    note.disabled     = false;
+  }
+}
+
+function generateReceiptNo(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const prefix = String(y) + m;
+  const count = receipts.filter(r => String(r.no||"").startsWith(prefix)).length + 1;
+  return prefix + String(count).padStart(4,'0');
+}
+
+function validate(){
+  if(!currentUser){
+    alert("Please login first");
+    return false;
+  }
+
+  if(type.value === "Reverse"){
+    if(!reverseOf.value.trim()){
+      alert("Please enter receipt number to reverse");
+      return false;
+    }
+    const orig = receipts.find(x => String(x.no) === reverseOf.value.trim());
+    if(!orig){
+      alert("Receipt not found");
+      return false;
+    }
+    return true;
+  }
+
+  if(
+    !customer.value.trim() ||
+    !flightNo.value.trim() ||
+    !service.value ||
+    !currency.value ||
+    !type.value ||
+    !company.value ||
+    !amount.value ||
+    !note.value.trim()
+  ){
+    alert("Please complete data");
+    return false;
+  }
+  return true;
+}
+
+function saveAndPrepare(){
+  if(!validate()) return;
+
+  const now = new Date();
+
+  // Reverse
+  if(type.value === "Reverse"){
+    const origNo = reverseOf.value.trim();
+    const original = receipts.find(x => String(x.no) === origNo);
+
+    const reversedEntry = {
+      no: generateReceiptNo(),
+      emp: currentUser,
+      customer: original.customer,
+      flightNo: original.flightNo || "",
+      service: original.service,
+      currency: original.currency,
+      type: "Reverse",
+      company: original.company,
+      amount: -Number(original.amount),
+      note: "Reversal of Receipt No: " + origNo,
+      date: now.toISOString().slice(0,10),
+      dateTime: now.toISOString(),
+      reverseOf: origNo
+    };
+
+    receipts.push(reversedEntry);
+    localStorage.setItem("receipts_v9", JSON.stringify(receipts));
+
+    lastReceiptNo = reversedEntry.no;
+    isLastPrinted = false;
+
+    renderPrintArea(reversedEntry);
+    alert("Reverse saved.\nNew Receipt No: " + reversedEntry.no);
+    return;
+  }
+
+  // Normal
+  const r = {
+    no: generateReceiptNo(),
+    emp: currentUser,
+    customer: customer.value.trim(),
+    flightNo: flightNo.value.trim(),
+    service: service.value,
+    currency: currency.value,
+    type: type.value,
+    company: company.value,
+    amount: Number(amount.value),
+    note: note.value.trim(),
+    date: now.toISOString().slice(0,10),
+    dateTime: now.toISOString(),
+    reverseOf: ""
+  };
+
+  const t = r.type.toLowerCase();
+  if(t === "payment" || t === "transfer"){
+    r.amount = -Math.abs(r.amount);
+  }
+
+  receipts.push(r);
+  localStorage.setItem("receipts_v9", JSON.stringify(receipts));
+
+  lastReceiptNo = r.no;
+  isLastPrinted = false;
+
+  renderPrintArea(r);
+  alert("Receipt saved.\nReceipt No: " + r.no + "\nPlease print before creating new receipt.");
+}
+
+function renderPrintArea(r){
+  const title = (String(r.type||"").toLowerCase() === "payment") ? "PAYMENT REQUEST" : "RECEIPT";
+  const dt = String(r.dateTime||"").replace("T"," ").slice(0,19);
+
+  const reverseRow = (r.type === "Reverse" && r.reverseOf)
+    ? `<div class="pair"><b>Reverse Of</b><span>${r.reverseOf}</span></div>`
+    : "";
+
+  printArea.classList.remove("hidden");
+  printArea.innerHTML = `
+    <div class="printHead">
+      <img src="nas_logo.png" class="receiptLogo" alt="NAS Logo">
+      <h2>${title}</h2>
+    </div>
+
+    <div class="printBody">
+      <div class="pair"><b>Receipt No</b><span>${r.no}</span></div>
+      ${reverseRow}
+      <div class="pair"><b>Date</b><span>${dt}</span></div>
+      <div class="pair"><b>Employee</b><span>${r.emp || ""}</span></div>
+      <div class="pair"><b>Passenger</b><span>${r.customer}</span></div>
+      <div class="pair"><b>Flight No</b><span>${r.flightNo || ""}</span></div>
+      <div class="pair"><b>Service</b><span>${r.service}</span></div>
+      <div class="pair"><b>Type</b><span>${r.type}</span></div>
+      <div class="pair"><b>Company</b><span>${r.company}</span></div>
+      <div class="pair"><b>Amount</b><span>${Number(r.amount)||0} ${r.currency}</span></div>
+      <div class="pair"><b>Description</b><span>${r.note}</span></div>
+
+      <div class="signRow">
+        <div>Receiver Name</div>
+        <div>Delivered By</div>
+      </div>
+
+      <div class="managerRow">
+        <div>Financial Manager</div>
+        <div>General Manager</div>
+      </div>
+    </div>
+
+    <div class="printActions">
+      <button class="btn btnPrimary" style="width:100%;" onclick="markPrinted()">Print</button>
+    </div>
+  `;
+}
+
+function markPrinted(){
+  isLastPrinted = true;
+  window.print();
+}
+
+function newReceipt(){
+  if(!lastReceiptNo || isLastPrinted){
+    clearFields();
+    return;
+  }
+  alert("You need to print the receipt first.\nReceipt No: " + lastReceiptNo);
+}
+
+function clearFields(){
+  type.value="";
+  onTypeChange();
+
+  customer.value="";
+  flightNo.value="";
+  service.value="";
+  currency.value="";
+  company.value="";
+  amount.value="";
+  note.value="";
+  reverseOf.value="";
+
+  printArea.classList.add("hidden");
+  printArea.innerHTML="";
+}
+
+function searchReceipt(){
+  const no = searchNo.value.trim();
+  if(!no) return alert("Enter Receipt No");
+
+  const r = receipts.find(x => String(x.no) === no);
+  if(!r) return alert("Receipt not found");
+
+  renderPrintArea(r);
+}
+
+/* ✅ Export REAL Excel (.xlsx) */
+function exportExcel(){
+  const d = reportDate.value;
+  if(!d) return alert("Select date");
+
+  const data = receipts.filter(r => r.date === d);
+  if(data.length===0) return alert("No data");
+
+  const rows = data.map(r => ({
+    "Receipt No": r.no,
+    "Employee": r.emp || "",
+    "Type": r.type,
+    "Reverse Of": (r.type === "Reverse") ? (r.reverseOf || "") : "",
+    "Passenger": r.customer,
+    "Flight No": r.flightNo || "",
+    "Service": r.service,
+    "Company": r.company,
+    "Currency": r.currency,
+    "Amount": Number(r.amount) || 0,
+    "Description": r.note,
+    "DateTime": String(r.dateTime||"").replace("T"," ").slice(0,19)
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  const keys = Object.keys(rows[0]);
+  ws["!cols"] = keys.map(k => {
+    let maxLen = k.length;
+    rows.forEach(r => { maxLen = Math.max(maxLen, String(r[k] ?? "").length); });
+    return { wch: Math.min(Math.max(maxLen + 2, 12), 45) };
+  });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Daily Report");
+  XLSX.writeFile(wb, "Daily_Report_" + d + ".xlsx");
+}
+</script>
+</body>
+</html>
